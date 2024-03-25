@@ -1,48 +1,29 @@
 const express = require('express');
+const path = require('path');
 const PORT = 4000;
 const HOST = '0.0.0.0';
-const Users = [
-  { 
-    id: 0,
-    nama: 'Jack',
-  },
-  {
-    id: 1,
-    name: 'Jennifer',
-  }
-]
-
+const usersRouter = require('./routes/users.router');
+const postsRouter = require('./routes/posts.router');
 const app = express();
+app.set('view engine', 'hbs');
+app.set('views', path.join(__dirname, 'views'));
 
+app.use('/static', express.static(path.join(__dirname, 'public')));
+// 절대 경로
 app.use(express.json());
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
+  console.log(`${req.method} ${req.baseUrl}${req.url}`);
 })
-app.get('/users', (req, res) => {
-  res.send(Users);
-})
-app.post('/users', (req,res) => {
-  if(!req.body.name) {
-    return res.status(400).json({
-      error: "Missing user name",
-    })
-  }
 
-  const newUser = {
-    name: req.body.name,
-    id: Users.length
-  }
-  Users.push(newUser);
-  res.json(newUser); 
+app.get('/', (req,res) => {
+  res.render('index', {
+    imageTitle: 'it is a animal nong jang',
+  })
 })
-app.get('/users/:userId', (req, res) => {
-  const userId = Number(req.params.userId);
-  const user = Users[userId];
-  console.log(user)
-  if(user) app.send(res.json(user));
-  else res.sendStatus(404);
-})
+app.use('/users', usersRouter);
+app.use('/posts', postsRouter);
 
 app.listen(PORT, HOST);
 console.log(`running on http://${HOST}:${PORT}...`)
