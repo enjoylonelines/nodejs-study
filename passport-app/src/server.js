@@ -4,15 +4,31 @@ const { default: mongoose } = require("mongoose");
 const passport = require("passport");
 const path = require("path");
 const User = require("./models/users.model");
+const { render } = require("ejs");
 const app = express();
 
 // cookie-session
 const cookieEncryptionKey = "superSecret-key";
 app.use(
   cookieSession({
+    name: "cookie-session-name-1",
     keys: [cookieEncryptionKey],
   })
 );
+
+app.use(function (request, response, next) {
+  if (request.session && !request.session.regenerate) {
+    request.session.regenerate = (cb) => {
+      cb();
+    };
+  }
+  if (request.session && !request.session.save) {
+    request.session.save = (cb) => {
+      cb();
+    };
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -37,6 +53,8 @@ mongoose
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
+app.get("/", (req, res) => res.render("index")); // render >> res.render Tlqkf 302 found
+
 app.get("/login", (req, res) => {
   res.render("login");
 });
@@ -46,10 +64,12 @@ app.post("/login", (req, res, next) => {
     if (err) return next(err);
     if (!user) return res.json({ msg: info });
     req.logIn(user, (err) => {
-      if (err) return next(err);
+      if (err) {
+        return next(err);
+      }
       res.redirect("/");
     });
-  });
+  })(req, res, next); // 이러면 콜백안의 메서드를 호출
 });
 
 app.get("/signup", (req, res) => {
